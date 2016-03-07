@@ -1,0 +1,63 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+<?php
+include("../connect.php");
+
+if (isset($_GET['account'])){
+  $_SESSION['memberUpdate'] = $_GET['account'];
+  $account = $_SESSION['memberUpdate'];
+}else {
+  $account = $_SESSION['memberUpdate'];
+}
+
+if ($_SESSION['account']!=$account and $_SESSION['account']!='admin'){
+    echo "你不能進入此頁";
+    exit();
+}
+echo "<h3>修改會員</h3>";
+$form = '<form method=post action=/member/memberUpdate.php>';
+
+$sql = "select password from member where account='$account'";
+$search = oci_parse($dbconn, $sql);
+oci_execute($search);
+while (($row = oci_fetch_array($search, OCI_BOTH)) != false) {
+    $password = $row[0] ;
+}
+
+$form .= '<p>帳號: '.$account.' 密碼: '.$password.'</p>';
+$form .= '<input name=account type=hidden value='.$account.' readOnly>';
+$form .= '<p>密碼: <input name=password type=password required autofocus></p>';
+$form .= '<p>確認密碼: <input name=password2 type=password required></p>';
+$form .= "<p><input class='btn btn-primary' type=submit value=修改></p></form>";
+echo $form;
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $account = $_POST["account"];
+  $password = $_POST["password"];
+  $password2 = $_POST["password2"];
+  if($password!=$password2){
+  	 echo "password and password not same. Please change";
+  	 exit();
+  }
+  $sql = "UPDATE member SET password='".$password."' WHERE account='".$account."'";
+  $update = oci_parse($dbconn, $sql);
+  oci_execute($update);
+  $_SESSION['message'] = "修改成功";
+  unset($_SESSION['memberUpdate']);
+    
+  if ($_SESSION['account']=='admin'){
+    header('Location: /member/member.php');
+    exit();
+  }
+  header('Location: /member/memberDetail.php');
+  exit();
+}
+
+?>
+
+
+
+</body>
+</html>

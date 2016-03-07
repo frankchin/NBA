@@ -1,0 +1,36 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>新增文章</h3>
+<form method=post action=/forum/forumAdd.php>
+<p>標題:<input name=title required></p>
+<p>內容:<textarea name=content required></textarea></p>
+<p><input class='btn btn-primary' type=submit value=新增></p>
+
+</form>
+<?php
+include("../connect.php");
+date_default_timezone_set('Asia/Taipei');
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $title = $_POST["title"];
+  $content = $_POST["content"];
+  if(!$title or !$content){
+  	 echo "title and content need value. ";
+  	 exit();
+  }
+  $now = date('Y-m-d H:i:s');
+  $account = $_SESSION['account'];
+  $sql = "INSERT INTO forum (id,title, content, account, uploadTime)
+	VALUES (seq_forum.nextval,'$title','$content', '$account',TO_DATE('$now','YYYY-MM-DD HH24:MI:SS '))";
+  $save = oci_parse($dbconn, $sql);
+  oci_execute($save);
+  $_SESSION['message'] = "新增成功";
+  header('Location: /forum/forum.php');
+
+}
+   
+?>
+
+</body>
+</html>

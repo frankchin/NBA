@@ -1,0 +1,61 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>新增球隊</h3>
+<form method=post action=/team/teamAdd.php enctype="multipart/form-data">
+<p>地名: <input name=place required></p>
+<p>隊名: <input name=name required></p>
+<p>聯盟: <select id=area name=area required><option>東區</option><option>西區</option></select></p>
+<p>地區組: <select id=areaLocation name=areaLocation required>
+    <option>中央組</option>
+    <option>大西洋組</option>
+    <option>東南組</option></select></p>
+<p>圖片上傳: <input type=file name=image></p>
+<p><input class='btn btn-primary' type=submit value=建立></p>
+
+</form>
+
+<?php
+include("../connect.php");
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+    $place = $_POST["place"];
+    $name = $_POST["name"];
+    $area = $_POST["area"];
+    $areaLocation = $_POST["areaLocation"];
+    if(!$place or !$name or !$area or !$areaLocation){
+        echo "請輸入資料";
+        exit();
+    }
+    $imageURL = "no";
+    if ($_FILES["image"]["name"]){
+        $imageURL = $_FILES["image"]["name"];
+        move_uploaded_file($_FILES["image"]["tmp_name"],"img/".$_FILES["image"]["name"]);
+    }
+    $sql = "INSERT INTO team (id, place, name, area, areaLocation, imageURL)
+    VALUES (seq_team.nextval,'$place','$name', '$area', '$areaLocation', '$imageURL')";  
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+    $_SESSION['message'] = "建立完成";
+    header('Location: /team/team.php');
+}
+   
+?>
+<script>
+$('#area').on('change', function(){
+    var val = this.value;
+    $("#areaLocation").empty();
+    if (val=="東區"){
+        $("#areaLocation").append($('<option></option>').text("中央組"));
+        $("#areaLocation").append($('<option></option>').text("大西洋組"));
+        $("#areaLocation").append($('<option></option>').text("東南組"));
+    }else if(val=="西區"){
+        $("#areaLocation").append($('<option></option>').text("太平洋組"));
+        $("#areaLocation").append($('<option></option>').text("西北組"));
+        $("#areaLocation").append($('<option></option>').text("西南組"));
+    }
+});
+    
+</script>
+</body>
+</html>

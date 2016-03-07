@@ -1,0 +1,86 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>修改球員</h3>
+<?php
+include("../connect.php");
+if (isset($_GET['id'])){
+  $_SESSION['playerUpdate'] = $_GET['id'];
+  $id = $_SESSION['playerUpdate'];
+}else {
+  $id = $_SESSION['playerUpdate'];
+}
+
+$form = '<form method=post action=/player/playerUpdate.php>';
+
+$sql = "select * from player where id='$id'";
+$search = oci_parse($dbconn, $sql);
+oci_execute($search);
+while (($row = oci_fetch_array($search, OCI_BOTH)) != false) {
+    $form = "<form method=post action=/player/playerUpdate.php enctype=multipart/form-data>";
+    $form .= "<p><input type=hidden name=id value=$row[0]></p>";
+    $form .= "<p>姓:<input name=firstName value=$row[1] required>ex: Bryant</p>";
+    $form .= "<p>名字:<input name=lastName value=$row[2] required>ex: Kobe</p>";
+    
+    $sql = "SELECT id,name FROM team";
+    $oci_rs = oci_parse($dbconn,$sql);
+    oci_execute($oci_rs,OCI_DEFAULT);
+    $select = "<select name=team required>";
+    while (($row2 = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+        if($row[3]==$row2[0]){
+            $select .= "<option  value=$row2[0] selected>$row2[1]</option>";
+        }else{
+            $select .= "<option  value=$row2[0]>$row2[1]</option>";
+         }   
+    }
+    $select .= "</select></p>";
+    $form .= "<p>隊名:". $select;
+    
+    $form .= "<p>位置:<input name=type value=$row[4] required></p>";
+    $form .= "<p>體重:<input name=weight value=$row[5] required></p>";
+    $form .= "<p>身高:<input name=height value=$row[6] required></p>";
+    $form .= "<p>國家:<input name=country value=$row[7] required></p>";
+    $form .= "<p>圖片上傳: <input type=file name=image> <img src=img/$row[8]></p>";
+    $form .= "<p><input type=submit class='btn btn-info' value=修改></p></form>";
+    $imageURL = $row[8];
+}
+
+echo $form;
+
+
+
+    
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+ $firstName = $_POST["firstName"];
+  $lastName = $_POST["lastName"];
+  $team = $_POST["team"];
+  $type = $_POST["type"];
+  $weight = $_POST["weight"];
+  $height = $_POST["height"];
+  $country = $_POST["country"];
+  if (!isset($imageURL)){
+        $imageURL = 'no';
+  }
+  
+  if ($_FILES["image"]["name"]){
+      $imageURL = $_FILES["image"]["name"];
+      move_uploaded_file($_FILES["image"]["tmp_name"],"img/".$_FILES["image"]["name"]);
+  }
+    
+  $sql = "UPDATE player set firstName='$firstName',lastName='$lastName',team='$team',type='$type',weight='$weight',height='$height',country='$country', imageURL='$imageURL' WHERE id='$id' ";
+    
+  $update = oci_parse($dbconn, $sql);
+  oci_execute($update);
+  $_SESSION['message'] = "修改成功";
+  unset($_SESSION['playerUpdate']);
+  header('Location: /player/player.php');
+  exit();
+  
+}
+
+?>
+
+
+
+</body>
+</html>

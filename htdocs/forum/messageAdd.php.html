@@ -1,0 +1,31 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+It's messageAdd page
+<?php
+
+include("../connect.php");
+date_default_timezone_set('Asia/Taipei');
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $forumId = $_POST["forumId"];
+  $content = $_POST["content"];
+   if(!$content){
+  	 echo "請輸入內容 ";
+  	 exit();
+  }
+  $now = date('Y-m-d H:i:s');
+  $account = $_SESSION['account'];
+  $sql = "INSERT INTO message (id, content, account, uploadTime, forum)
+	VALUES (seq_message.nextval, '$content', '$account', TO_DATE('$now','YYYY-MM-DD HH24:MI:SS '), '$forumId')";
+  $save = oci_parse($dbconn, $sql);
+  oci_execute($save);
+  $_SESSION['message'] = "新增成功";
+  header("Location: /forum/forumDetail.php?id=$forumId");
+}
+
+
+
+?>
+</body>
+</html>

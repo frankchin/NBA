@@ -1,0 +1,35 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+    <br><div class=center><a href=/member/memberAdd.php><button class='btn btn-primary'>新增會員</button></a></div><br><br>
+
+
+<?php
+include("../connect.php");
+if (isset($_SESSION['message'])){
+	echo "<br>".$_SESSION['message']."<br>";
+	unset($_SESSION['message']);
+}
+
+$sql = "SELECT * FROM member";
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$table = "<table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>帳號</th><th>密碼</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+	$table .= "<tr><td><a href=/member/memberUpdate.php?account=$row[0]>$row[0]</td>";
+	$table .= "<td>$row[1]</td>";
+	$table .= "<td><form method=post action=/member/memberDelete.php>
+            <input name=account type=hidden value=$row[0]>
+            <input class='btn btn-danger' type=submit value=刪除></form></td></tr>";
+}
+$table .= "</table>";
+echo $table;
+
+   oci_close($dbconn);
+   
+?>
+
+</body>
+</html>

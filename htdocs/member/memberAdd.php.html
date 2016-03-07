@@ -1,0 +1,32 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>註冊會員</h3>
+<form method=post action=/member/memberAdd.php>
+<p>帳號:<input name=account required autofocus></p>
+<p>密碼:<input type=password name=password required></p>
+<p><input class='btn btn-primary' type=submit value=註冊></p>
+
+</form>
+
+<?php
+include("../connect.php");
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $account = $_POST["account"];
+  $password = $_POST["password"];
+  $sql = "INSERT INTO member (account, password) VALUES ('$account', '$password')";   
+  $save = oci_parse($dbconn, $sql);
+  @oci_execute($save) or die ("account already exist");
+  $_SESSION['message'] = "註冊完成";
+    if ($_SESSION['account']=='admin'){
+  header('Location: /member/member.php');
+    }else{
+        header('Location: /login.php');
+    }
+}
+   
+?>
+
+</body>
+</html>

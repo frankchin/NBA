@@ -1,0 +1,49 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>修改文章</h3>
+<?php
+include("../connect.php");
+if (isset($_GET['id'])){
+  $_SESSION['forumUpdate'] = $_GET['id'];
+  $forumId = $_SESSION['forumUpdate'];
+}else {
+  $forumId = $_SESSION['forumUpdate'];
+}
+
+$form = '<form method=post action=/forum/forumUpdate.php>';
+
+$sql = "select title, content from forum where id='$forumId'";
+$search = oci_parse($dbconn, $sql);
+oci_execute($search);
+while (($row = oci_fetch_array($search, OCI_BOTH)) != false) {
+	$form .="<input type=hidden name=id value='$forumId'>";
+	$form .= "<p>標題: <input type=text name=title value='$row[0]' required></p>";
+	$form .= "<p>內容: <textarea name=content required>$row[1]</textarea></p>";
+	$form .= "<p><input class='btn btn-info' type=submit value=修改></p></form>";
+}
+
+echo $form;
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $id = $_POST["id"];
+  $title = $_POST["title"];
+  $content = $_POST["content"];
+  if(!$title or !$content){
+  	 echo "title and content need value. ";
+  	 exit();
+  }
+  $sql = "UPDATE forum SET title='$title', content='$content' WHERE id='$id' ";
+  $update = oci_parse($dbconn, $sql);
+  oci_execute($update);
+  $_SESSION['message'] = "修改成功";
+  header("Location: /forum/forumDetail.php?id=$id");
+  exit();
+}
+
+?>
+
+
+
+</body>
+</html>

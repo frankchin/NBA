@@ -1,0 +1,66 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+
+
+
+<?php
+if ($_SESSION['account']=='admin'){
+   $a = "<div class=center><p><a href=/game/gameAdd.php><button class='btn btn-primary'>新增比賽</button></a></p></div>"; 
+   echo $a;
+}
+
+
+include("../connect.php");
+if (isset($_SESSION['message'])){
+	echo "<br>".$_SESSION['message']."<br>";
+	unset($_SESSION['message']);
+}
+
+$sql = "select g.id , g.time , t1.name ,t2.name , g.score1, g.score2 from game g, team t1, team t2
+where g.team1=t1.id and g.team2=t2.id order by g.time DESC" ;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+date_default_timezone_set('Asia/Taipei');
+$now = date('Y-m-d H:i:s');
+
+
+$table = "<table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>比賽時間</th><th>主場隊伍</th><th>客場隊伍</th><th>主場分數</th><th>客場分數</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    $date = date_create_from_format('d-M-y g.i.s.u a', $row[1]);
+  	$date = date_format($date, 'Y-m-d G:i');
+
+	$table .= "<tr><td>$date</td>";
+	$table .= "<td>$row[2]</td>";
+    $table .= "<td>$row[3]</td>";
+    $table .= "<td>$row[4]</td>";
+    $table .= "<td>$row[5]</td>";
+    if ($now>$date){
+        $table .= "<td>封盤</td>";
+    }else {
+        $table .= "<td><a href=/game/bet.php?id=$row[0]><button class='btn btn-info'>前往下注</button></a></td>";
+    }
+    if ($_SESSION['account']=='admin'){
+	$table .= "<td>
+    <form class=inline method=post action=/game/gameDelete.php>
+    <a href=/game/gameUpdate.php?id=$row[0]><button class='btn btn-default' type=button>修改</button></a>
+            <input name=id type=hidden value=$row[0]>
+            <input class='btn btn-danger' type=submit value=刪除>
+            <a href=/game/gameEnd.php?id=$row[0]><button class='btn btn-default' type=button>登記分數</button></a>
+            </form></td>";
+    }
+    $table .= "</tr>";
+}
+$table .= "</table>";
+echo $table;
+
+
+   
+   oci_close($dbconn);
+   
+?>
+
+</body>
+</html>

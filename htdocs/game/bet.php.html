@@ -1,0 +1,107 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+
+<?php
+include("../connect.php");
+
+if (isset($_GET['id'])){
+  $_SESSION['gameId'] = $_GET['id'];
+  $gameId = $_SESSION['gameId'];
+}else {
+  $gameId = $_SESSION['gameId'];
+}
+
+
+$sql = "select g.id, g.time, t1.id, t1.place, t1.name, t1.imageURL, t2.id, t2.place, t2.name, t2.imageURL, g.odds1, g.odds2 from game g, team t1, team t2  where g.team1=t1.id and g.team2=t2.id and g.id = '$gameId' " ;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+
+$table = "<table border=1 style='border-collapse: collapse;'><tr><th></th><th>主場球隊</th><th>客場球隊</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    $table .= "<tr><th>圖片</th><td><img src=../team/img/$row[5] ></td><td><img src=../team/img/$row[9]></td></tr>";
+    $table .= "<tr><th>球隊</th><td>$row[3] $row[4]</td><td>$row[7] $row[8]</td></tr>";
+    $table .= "<tr><th>賠率</th><td>$row[10]</td><td>$row[11]</td></tr>";
+    $table .= "</table>";
+    echo $table;
+    $form = "<form method=post action=/game/bet.php>";
+    
+    $account = $_SESSION['account'];
+    $sql = "select coin from member where account='$account'";
+    $oci_rs = oci_parse($dbconn,$sql);
+    oci_execute($oci_rs,OCI_DEFAULT);
+    while (($row2 = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+        $accountCoin = $row2[0];
+        $form .= "<p>目前金幣: $row2[0]</p>";
+    }
+    
+    $form .= "<p>選擇球隊: <select id=winTeam name=winTeam><option value=$row[2],$row[10]>$row[3] $row[4]</option>
+                        <option value=$row[6],$row[11]>$row[7] $row[8]</option></select></p>";
+    $form .= "<p>下注金額: <input id=coin name=coin type=number required></p>";
+    $form .= "<p>得到金額: <span id=moneyShow ></span> <input id=money name=money type=hidden></p>";
+    $form .= "<p><input name=gameId type=hidden value=$row[0]></p>";
+    $form .= "<p><input class='btn btn-info' type=submit value=下注><p>";
+    echo $form; 
+    
+}
+?>
+       
+<script>
+$('#coin').on('keyup', function(){
+    this.value = this.value.replace(/\D/g,"");
+    var val = this.value;
+    if (val==""){
+        $('#moneyShow').html('');
+        $('#money').val('');
+        return false;
+    }
+    var odds = $('#winTeam option:selected').val().split(',')[1];
+    var money = Math.round(parseInt(val)*parseFloat(odds));
+    $('#moneyShow').html(money);
+    $('#money').val(money);
+});
+</script> 
+    
+    
+<?php
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+    $account = $_SESSION['account'];
+    $game = $_POST["gameId"];
+    $winTeam = explode(',', $_POST["winTeam"])[0];
+    $coin = $_POST["coin"];
+    $money = $_POST["money"];
+    if ($accountCoin<$coin){
+        echo "你沒有足夠的金幣";
+        exit();
+    }
+
+
+    if(!$coin ){
+        echo "請輸入資料";
+        exit();
+    }
+
+    $sql = "INSERT INTO bet (id, game, winTeam, account, coin, money)
+    VALUES (seq_bet.nextval, '$game', '$winTeam','$account', '$coin', '$money' )";  
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+
+    
+    $endCoin = $accountCoin - $coin;
+    $sql2 = "UPDATE member SET coin='$endCoin' where account='$account'  ";  
+    $save2 = oci_parse($dbconn, $sql2);
+    oci_execute($save2);
+    
+    $_SESSION['message'] = "下注完成";
+    unset($_SESSION['gameId']);
+    header('Location: /member/memberDetail.php');
+    
+}
+
+?>
+    
+    
+
+</body>
+</html>

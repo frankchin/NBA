@@ -1,0 +1,82 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+
+<?php
+include("../connect.php");
+
+if (isset($_SESSION['message'])){
+	echo "<br>".$_SESSION['message']."<br>";
+	unset($_SESSION['message']);
+}
+
+date_default_timezone_set('Asia/Taipei');
+$id = $_GET['id'];
+$sql = "SELECT title, content, account, uploadTime FROM forum where id = '$id' ";
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs);
+$table = "<table border=1 style='border-collapse: collapse;'>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+	$table .= "<tr><th>標題: </th>";
+	$table .= "<td>$row[0]</td>";
+	if($row[2]==$_SESSION['account'] or $_SESSION['account']=='admin'){
+		$table .= "<td><a href=/forum/forumUpdate.php?id=$id><button class='btn btn-info' >修改</button></a></td>";
+	}
+	$table .= "</tr>";
+	$table .= "<tr><th>內容: </th><td>$row[1]</td></tr>";
+	$table .= "<tr><th>作者: </th><td>$row[2]</td></tr>";
+
+	$date = date_create_from_format('d-M-y g.i.s.u a', $row[3]);
+  	$date = date_format($date, 'Y-m-d G:i:s');
+	$table .= "<tr><th>上傳時間: </th><td>$date</td></tr>";
+}
+
+$table .= "</table>";
+echo $table;
+
+
+
+//message
+$table2 = "<br><table>";
+$table2 .= "<tr><th>帳號</th><th>內容</th><th>上傳時間</th></tr>";
+$sql = "SELECT id, account, content, uploadTime FROM message where forum = '$id' ORDER BY uploadTime DESC ";
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs);
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+	$date = date_create_from_format('d-M-y g.i.s.u a', $row[3]);
+  	$date = date_format($date, 'Y-m-d G:i:s');
+	$table2 .= "<tr><td>$row[1]</td><td>$row[2]</td><td>$date</td>";
+	if($row[1]==$_SESSION['account'] or $_SESSION['account']=='admin'){
+		$table2 .= "<td>
+		<form class=inline method=post action=/forum/messageDelete.php>
+<a href=/forum/messageUpdate.php?id=$row[0]><button class='btn btn-info' type=button>修改</button></a>
+		<input type=hidden name=id value=$row[0]>
+		<input type=hidden name=forumId value=$id>
+		<input class='btn btn-danger' type=submit value=刪除></form>
+		</td>";
+	}
+		
+	
+}
+
+
+$table2 .= "</tr></table><br>";
+
+
+echo $table2;
+$messageTable = "<form method=post action=/forum/messageAdd.php>";
+$messageTable .= "<table  border=1 style='border-collapse: collapse;'><tr><th>帳號</th><th>內容</th><th></th></tr>";
+$messageTable .= "<td>".$_SESSION['account']."</td><td><input type=hidden name=forumId value=$id><textarea name=content required></textarea>";
+$messageTable .= "<td><input class='btn btn-primary' type=submit value=送出></td></tr></table></form>";
+echo $messageTable;
+?>
+
+
+
+
+
+
+
+</body>
+</html>

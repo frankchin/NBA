@@ -1,0 +1,102 @@
+<html>
+<?php include("../base.php"); 
+    include("../connect.php");?>
+<body>
+<form method=get action=/team/teamSearch.php>
+    聯盟: <select id=area name=area>
+        <option value=no></option>
+        <option value=東區>東區</option>
+        <option value=西區>西區</option>
+    </select>
+    地區組: 
+    <select id=areaLocation name=areaLocation>
+        <option value=no></option>
+    </select>
+    <p><input class="btn btn-info" type=submit value=查詢></p>
+</form>
+
+<script>
+$('#area').on('change', function(){
+    var val = this.value;
+    $("#areaLocation").empty();
+    if (val=="東區"){
+        $("#areaLocation").append($('<option></option>').text("").val('no'));
+        $("#areaLocation").append($('<option></option>').text("中央組"));
+        $("#areaLocation").append($('<option></option>').text("大西洋組"));
+        $("#areaLocation").append($('<option></option>').text("東南組"));
+    }else if(val=="西區"){
+        $("#areaLocation").append($('<option></option>').text("").val('no'));
+        $("#areaLocation").append($('<option></option>').text("太平洋組"));
+        $("#areaLocation").append($('<option></option>').text("西北組"));
+        $("#areaLocation").append($('<option></option>').text("西南組"));
+    }
+});
+    
+</script>
+    
+<?php
+
+if(!isset($_GET['area']) or !isset($_GET['areaLocation']) ){
+    exit();
+}
+$area = $_GET['area'];
+$areaLocation = $_GET['areaLocation'];
+
+if($area=="no" and $areaLocation=="no"){
+    echo "請輸入資料";
+    exit();     
+}
+
+
+$sql = "SELECT * FROM team where ";
+$result = "查詢結果: ";
+$addAnd = false;
+if ($area!="no"){
+    $addAnd = true;
+    $sql .= " area='$area' ";
+    $result .= "聯盟=$area ，";
+}
+if ($areaLocation!="no"){
+    if($addAnd){
+        $sql .= "and ";
+    }
+    $sql .= "areaLocation='$areaLocation' ";
+    $result .= "地區組=$areaLocation ，";
+}
+echo $result;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$data = false;
+$table = "<table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>隊名</th><th>聯盟</th><th>地區組</th><th>圖片</th><th>投票人數</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    if ($_SESSION['account']=='admin'){
+	   $table .= "<tr><td><a href=/team/teamUpdate.php?id=$row[0]>$row[1], $row[2]</td>";
+    }else{
+        $table .= "<tr><td><a href=/team/teamDetail.php?id=$row[0]>$row[1], $row[2]</td>";
+    }
+    
+	$table .= "<td>$row[3]</td>";
+    $table .= "<td>$row[4]</td>";
+    $table .= "<td><img src=img/$row[5]></td>";
+    $table .= "<td>$row[6]</td>";
+    if ($_SESSION['account']=='admin'){
+	$table .= "<td><form method=post action=/player/playerDelete.php>
+            <input name=id type=hidden value=$row[0]>
+            <input class='btn btn-danger' type=submit value=刪除></form></td>";
+    }
+    $table .= "</tr>";
+    $data = true;
+}
+$table .= "</table>";
+echo $table;
+if(!$data){
+    echo "<h4>查無資料</h4>";
+}
+oci_close($dbconn);
+
+   
+?>
+
+</body>
+</html>

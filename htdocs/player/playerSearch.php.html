@@ -1,0 +1,104 @@
+<html>
+<?php include("../base.php"); 
+    include("../connect.php");?>
+<body>
+<form method=get action=/player/playerSearch.php>
+    <p>姓: <input name=keyword></p>
+    <p>名: <input name=keyword2></p>
+    <?php
+    $p = "<p>球隊: <select name=team><option value=no></option>";
+    $sql = "select id, name from team";
+    $oci_rs = oci_parse($dbconn,$sql);
+    oci_execute($oci_rs,OCI_DEFAULT);
+    while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+        $p .= "<option value=$row[0],$row[1]>$row[1]</option>";
+    }
+    $p .= "</select>";
+    echo $p;
+    ?>
+    <p>位置: <select name=type>
+        <option value=no></option>
+        <option value=前鋒>前鋒</option>
+        <option value=中鋒>中鋒</option>
+        <option value=後衛>後衛</option>
+        </select></p>
+    <p><input class="btn btn-info" type=submit value=查詢></p>
+</form>
+
+
+<?php
+include("../connect.php");
+if(!isset($_GET['keyword']) or !isset($_GET['keyword2']) or !isset($_GET['team']) or !isset($_GET['type'])  ){
+    exit();
+}
+$keyword = $_GET['keyword'];
+$keyword2 = $_GET['keyword2'];
+$team = $_GET['team'];
+$type = $_GET['type'];
+
+if($keyword=='' and $keyword2=='' and $type=="no" and $team=="no"){
+    echo "請輸入資料";
+    exit();     
+}
+
+
+$sql = "SELECT p.id, p.firstName, p.lastname, t.name, p.type, p.weight, p.height, p.country, p.imageURL, p.voteNum FROM player p , team t 
+where p.team = t.id ";
+$result = "查詢結果: ";
+if ($keyword!=""){
+    $sql .= "and firstName like '%$keyword%' ";
+    $result .= "姓 包含 $keyword ，"; 
+}
+if ($keyword2!=""){
+    $sql .= "and lastName like '%$keyword2%' ";
+    $result .= "名 包含 $keyword2 ，"; 
+}
+if ($team!="no"){
+    $teamArray = explode(",", $team);
+    $sql .= "and team='$teamArray[0]' ";
+    $result .= "球隊=$teamArray[1] ，";
+}
+if ($type!="no"){
+    $sql .= "and type='$type' ";
+    $result .= "位置=$type ，";
+}
+echo $result;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$data = false;
+$table = "<table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>球員姓名</th><th>球隊</th><th>位置</th><th>體重</th><th>身高</th><th>國家</th><th>圖片</th><th>投票人數</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    if ($_SESSION['account']=='admin'){
+	   $table .= "<tr><td><a href=/player/playerUpdate.php?id=$row[0]>$row[1], $row[2]</td>";
+    }else{
+        $table .= "<tr><td><a href=/player/playerDetail.php?id=$row[0]>$row[1], $row[2]</td>";
+    }
+    
+	$table .= "<td>$row[3]</td>";
+    $table .= "<td>$row[4]</td>";
+    $table .= "<td>$row[5]</td>";
+    $table .= "<td>$row[6]</td>";   
+    $table .= "<td>$row[7]</td>";
+    $table .= "<td><img src=img/$row[8]></td>";
+    $table .= "<td>$row[9]</td>";
+    if ($_SESSION['account']=='admin'){
+	$table .= "<td><form method=post action=/player/playerDelete.php>
+            <input name=id type=hidden value=$row[0]>
+            <input class='btn btn-danger' type=submit value=刪除></form></td>";
+    }
+    $table .= "</tr>";
+    $data = true;
+}
+$table .= "</table>";
+echo $table;
+if(!$data){
+    echo "<h4>查無資料</h4>";
+}
+oci_close($dbconn);
+
+   
+?>
+
+</body>
+</html>

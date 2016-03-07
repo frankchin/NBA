@@ -1,0 +1,54 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+
+
+
+<?php
+include("../connect.php");
+if (isset($_SESSION['message'])){
+	echo "<br>".$_SESSION['message']."<br>";
+	unset($_SESSION['message']);
+}
+
+if (isset($_GET['id'])){
+  $_SESSION['teamId'] = $_GET['id'];
+  $teamId = $_SESSION['teamId'];
+}else {
+  $teamId = $_SESSION['teamId'];
+}
+
+
+$sql = "select * from team where id='$teamId'";
+$search = oci_parse($dbconn, $sql);
+oci_execute($search);
+while (($row = oci_fetch_array($search, OCI_BOTH)) != false) {
+    echo "<div class=center><p><img src=img/$row[5]></p>";
+    echo "<p>隊名: $row[1] $row[2]</p>";
+    echo "<p>聯盟: $row[3] $row[4]</p>";      
+    echo "<p>投票人數: $row[6]</p></div>";      
+}
+
+$account = $_SESSION['account'];
+
+$sql2 = "select * from teamVote where account='$account' and team='$teamId' ";
+$search = oci_parse($dbconn, $sql2);
+oci_execute($search);
+$r = oci_fetch_array($search);
+if ($r){
+    $vote = "投票--";
+}else {
+    $vote = "投票++";
+}
+$form = "<form class=center method=post action=/team/teamVote.php>";
+$form .= "<input type=hidden name=teamId value=$teamId>";
+$form .= "<input class='btn btn-primary' type=submit name=vote value=$vote>";
+$form .= "</form>";
+echo $form;
+
+   
+?>
+
+</body>
+</html>

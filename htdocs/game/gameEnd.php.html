@@ -1,0 +1,94 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+<h3>按下登記分數即發送金幣</h3>
+<?php
+include("../connect.php");
+
+if (isset($_GET['id'])){
+  $_SESSION['gameId'] = $_GET['id'];
+  $gameId = $_SESSION['gameId'];
+}else {
+  $gameId = $_SESSION['gameId'];
+}
+
+
+$sql = "select g.id , g.time , g.score1 , g.score2 , t1.place ,t2.place, t1.name ,t2.name, g.odds1, g.odds2 , g.team1, g.team2 from game g, team t1, team t2
+where g.team1=t1.id and g.team2=t2.id and g.id='$gameId' " ;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+
+
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    $dateTime = date_create_from_format('d-M-y g.i.s.u a', $row[1]);
+  	$date = date_format($dateTime, 'Y-m-d');
+    $time = date_format($dateTime, 'H:i');
+    $table = "<form method=post action=/game/gameEnd.php>
+            <table border=1 style='border-collapse: collapse;'>";
+    $table .= "<tr><th></th><th>主場球隊</th><th>客場球隊</th></tr>";
+    $table .= "<tr><th>隊名</th><td>$row[4] $row[6]</td><td>$row[5] $row[7]</td></tr>";
+    $table .= "<tr><th>賠率</th><td>$row[8]</td><td>$row[9]</td></tr>";
+    $table .= "<tr><th>分數</th><td><input name=score1 type=number value=$row[2] required></td>
+                <td><input name=score2 type=number value=$row[3] required></td></tr>";
+    $table .= "<tr><td colspan=3><input class='btn btn-info' type=submit value=登記分數></td></tr></table></form>";
+    echo $table; 
+    $team1 = $row[10];
+    $team2 = $row[11];
+    
+}
+?>
+       
+
+    
+    
+<?php
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+    $score1 = $_POST["score1"];
+    $score2 = $_POST["score2"];
+    if($score1!=0 and $score2!=0 and $score1==$score2){
+        echo "分數不能一樣";
+        exit();
+    }
+
+    $sql = "UPDATE game SET score1='$score1', score2='$score2' where id='$gameId'  ";  
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+    if ($score1>$score2){
+        $winTeam = $team1;
+    }else{
+        $winTeam = $team2;
+    }
+    $sql = "select b.account, b.money, m.coin from bet b, member m where b.game='$gameId' and               
+            b.winTeam='$winTeam'    and b.account=m.account and b.result<>'贏' ";
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+    
+    while (($row = oci_fetch_array($save, OCI_BOTH)) != false) {
+        $sql2 = "update member set coin=coin + $row[1] where account='$row[0]' ";
+        $save2 = oci_parse($dbconn, $sql2);
+        oci_execute($save2);
+    }
+    
+    
+    $sql = "UPDATE bet SET result='贏' where game='$gameId' and winTeam='$winTeam' ";  
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+
+    $sql = "UPDATE bet SET result='輸', money='0' where game='$gameId' and winTeam<>'$winTeam' ";  
+    $save = oci_parse($dbconn, $sql);
+    oci_execute($save);
+
+
+    $_SESSION['message'] = "發送完成";
+    unset($_SESSION['gameId']);
+    header('Location: /game/game.php');
+    
+}
+
+?>
+    
+    
+
+</body>
+</html>

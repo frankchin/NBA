@@ -1,0 +1,62 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>新增球員</h3>
+<form method=post action=/player/playerAdd.php enctype="multipart/form-data">
+<p>姓:<input name=firstName required>ex: Bryant</p>
+<p>名字:<input name=lastName required>ex: Kobe</p>
+<p>隊名:
+<?php 
+include("../connect.php");
+$sql = "SELECT id,name FROM team";
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$select = "<select name=team required>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    $select .= "<option  value=$row[0]>$row[1]</option>";
+}
+$select .= "</select></p>";
+echo $select;
+    ?>
+    
+<p>位置:<input name=type required></p>
+<p>體重:<input name=weight required></p>
+<p>身高:<input name=height required></p>
+<p>國家:<input name=country required></p>
+<p>圖片上傳: <input type=file name=image></p>
+<p><input class='btn btn-primary' type=submit value=增加></p>
+
+</form>
+
+<?php
+include("../connect.php");
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $firstName = $_POST["firstName"];
+  $lastName = $_POST["lastName"];
+  $team = $_POST["team"];
+  $type = $_POST["type"];
+  $weight = $_POST["weight"];
+  $height = $_POST["height"];
+  $country = $_POST["country"];
+ 
+  if(!$firstName or !$lastName or !$team or !$type or !$weight or!$height or !$country){
+    echo "請輸入資料";
+    exit();
+  }
+  $imageURL = "no";
+  if ($_FILES["image"]["name"]){
+      $imageURL = $_FILES["image"]["name"];
+      move_uploaded_file($_FILES["image"]["tmp_name"],"img/".$_FILES["image"]["name"]);
+  }
+  $sql = "INSERT INTO player (id, firstName, lastName,team,type,weight,height,country,imageURL) VALUES (seq_player.nextval, '$firstName', '$lastName','$team','$type','$weight','$height','$country', '$imageURL')";   
+  $save = oci_parse($dbconn, $sql);
+  oci_execute($save); 
+  $_SESSION['message'] = "新增完成";
+  header('Location: /player/player.php');
+}
+   
+?>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<html>
+<head>
+<meta charset="utf-8"></head>
+<body>
+now work
+<?php
+echo 'PHP!!! Hello ';
+?>
+<br>
+<h3><a href=member.php>member</a></h3>
+<br>
+<?php
+include("connect.php"); 
+
+
+
+    $sql = "SELECT * FROM students";
+    $oci_rs = oci_parse($dbconn,$sql);
+    oci_execute($oci_rs,OCI_DEFAULT);
+    $rows= OCIFetchstatement($oci_rs,$results);
+    $keys=array_keys($results);
+    $table = '<table border="1">';
+    foreach($keys as $key) 
+   {
+       $table .= " <TH>$key</TH>\n"; 
+    }
+    $table .= " </TR>\n";
+    for($i=0;$i<$rows;$i++) 
+   {
+       $table .= "<TR>";
+       foreach($results as $spalte)
+       {
+           $data = $spalte[$i];
+           $table .= " <TD>$data</TD>"; 
+       }
+       $table .=" </TR>";
+   }
+   echo $table;
+   
+   
+?>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+
+
+<?php
+include("../connect.php");
+if (isset($_SESSION['message'])){
+	echo "<br>".$_SESSION['message']."<br>";
+	unset($_SESSION['message']);
+}
+$account = $_SESSION['account'];
+?>
+
+    
+<?php
+$sql2 = "select coin from member where account='$account' ";
+$oci_rs = oci_parse($dbconn,$sql2);
+oci_execute($oci_rs,OCI_DEFAULT);
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+        $form = "<div class=center><form method=post action=memberCoin.php>
+        <input type=hidden name=coin value=$row[0]>
+        <input class='btn btn-primary' type=submit value=簽到></form>";
+        echo $form;
+        echo  "<p>目前金幣: $row[0]</p></div>";
+}
+?>
+        <br>
+    <div class=center>
+<form method=get action=memberDetail.php>
+    結果: <select name=result>
+    <option value=no></option>
+    <option value=結果未出>結果未出</option>
+    <option value=贏>贏</option>
+    <option value=輸>輸</option>
+    </select>
+    <input class="btn btn-info" type=submit value=查詢>
+</form>
+    </div>
+    <br>
+<?php
+$sql = "SELECT b.id, b.coin, b.money, b.result, t1.place, t1.name, t2.place, t2.name, g.time, g.id, g.score1, g.score2 FROM member m , bet b, game g, team t1, team t2
+        where m.account=b.account and g.id=b.game and g.team1=t1.id and g.team2=t2.id and m.account ='$account'  ";
+
+if(isset($_GET['result'])){
+    $result = $_GET['result'];
+}else {
+    $result = "no";
+}
+if ($result!="no"){
+    $sql .= "and b.result='$result' ";
+    $resultWord = "查詢條件: $result";
+    echo "<p class='center'>$resultWord</p>";
+}
+
+$sql .= "order by g.time DESC, b.result";
+$data = false;
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$table = "<table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>時間</th><th>主場</th><th>客場</th><th>主場分數</th><th>客場分數</th><th>下注金幣</th><th>賺的金幣</th><th>結果</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    $date = date_create_from_format('d-M-y g.i.s.u a', $row[8]);
+  	$date = date_format($date, 'Y-m-d G:i');
+    
+    $table .= "<tr><td>$date</td>";
+    $table .= "<td>$row[4] $row[5]</td>";
+    $table .= "<td>$row[6] $row[7]</td>";
+    $table .= "<td>$row[10]</td>";
+    $table .= "<td>$row[11]</td>";
+	$table .= "<td>$row[1]</td>";
+	$table .= "<td>$row[2]</td>";
+	$table .= "<td>$row[3]</td>";
+    //$table .= "<td><a href=/game/bet.php?id=$row[9]><button>前往比賽</button></a></td></tr>";
+    
+    $data = true;
+}
+$table .= "</table>";
+echo $table;
+
+if (!$data){
+    echo "<p class='center'>查無資料</p>";
+}
+
+   oci_close($dbconn);
+   
+?>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<html>
+<?php include("base.php");
+    include("connect.php");?>
+<body> 
+<?php    
+
+$sql = "SELECT * FROM (SELECT * FROM team ORDER BY voteNum DESC) where ROWNUM <= 3 ";
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$table = "<h3>球隊得票數高</h3><table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>隊名</th><th>聯盟</th><th>地區組</th><th>圖片</th><th>投票人數</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    if (isset($_SESSION['account'])){
+        if ($_SESSION['account']=='admin'){
+           $table .= "<tr><td><a href=/team/teamUpdate.php?id=$row[0]&area=$row[3]&areaLocation=$row[4]>$row[1]                 $row[2]</td>";  
+        }else{
+           $table .= "<tr><td><a href=/team/teamDetail.php?id=$row[0]>$row[1] $row[2]</td>";
+        }
+    }else{
+        $table .= "<tr><td>$row[1] $row[2]</td>";
+    }
+	$table .= "<td>$row[3]</td>";
+    $table .= "<td>$row[4]</td>";
+    $table .= "<td><img src=/team/img/$row[5]></td>";
+    $table .= "<td>$row[6]</td>";
+    if (isset($_SESSION['account'])){
+        if ($_SESSION['account']=='admin'){
+        $table .= "<td><form method=post action=/team/teamDelete.php>
+                <input name=id type=hidden value=$row[0]>
+                <input class='btn btn-danger' type=submit value=刪除></form></td>";
+        }
+    }
+    $table .= "</tr>";
+}
+$table .= "</table>";
+echo $table;
+    
+?>
+<?php 
+
+$sql = "SELECT p.id, p.firstName, p.lastname, t.name, p.type, p.weight, p.height, p.country, p.imageURL, p.voteNum FROM (SELECT * FROM player ORDER BY voteNum DESC) p inner join team t on p.team = t.id and ROWNUM <= 3";
+
+$oci_rs = oci_parse($dbconn,$sql);
+oci_execute($oci_rs,OCI_DEFAULT);
+$table = "<h3>球員得票數高</h3><table border=1 style='border-collapse: collapse;'>";
+$table .= "<tr><th>球員姓名</th><th>球隊</th><th>位置</th><th>體重</th><th>身高</th><th>國家</th><th>圖片</th><th>投票人數</th></tr>";
+while (($row = oci_fetch_array($oci_rs, OCI_BOTH)) != false) {
+    if (isset($_SESSION['account'])){
+        if ($_SESSION['account']=='admin'){
+           $table .= "<tr><td><a href=/player/playerUpdate.php?id=$row[0]>$row[1], $row[2]</td>";
+        }else{
+            $table .= "<tr><td><a href=/player/playerDetail.php?id=$row[0]>$row[1], $row[2]</td>";
+        }
+    }else{
+        $table .= "<tr><td>$row[1], $row[2]</td>";
+    }
+	$table .= "<td>$row[3]</td>";
+    $table .= "<td>$row[4]</td>";
+    $table .= "<td>$row[5]</td>";
+    $table .= "<td>$row[6]</td>";   
+    $table .= "<td>$row[7]</td>";
+    $table .= "<td><img src=/player/img/$row[8]></td>";
+    $table .= "<td>$row[9]</td>";
+    if (isset($_SESSION['account'])){
+        if ($_SESSION['account']=='admin'){
+        $table .= "<td><form method=post action=/player/playerDelete.php>
+                <input name=id type=hidden value=$row[0]>
+                <input class='btn btn-danger' type=submit value=刪除></form></td>";
+        }
+    }
+    $table .= "</tr>";
+}
+$table .= "</table>";
+echo $table;
+
+?>
+
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<html>
+<?php include("../base.php"); ?>
+<body>
+<h3>修改留言</h3>
+<?php
+include("../connect.php");
+if (isset($_GET['id'])){
+  $_SESSION['messageUpdate'] = $_GET['id'];
+  $messageId = $_SESSION['messageUpdate'];
+}else {
+  $messageId = $_SESSION['messageUpdate'];
+}
+
+$form = '<form method=post action=/forum/messageUpdate.php>';
+
+$sql = "select content, forum from message where id='$messageId'";
+$search = oci_parse($dbconn, $sql);
+oci_execute($search);
+while (($row = oci_fetch_array($search, OCI_BOTH)) != false) {
+	$form .="<input type=hidden name=id value='$messageId'>";
+	$form .= "<p>內容: <textarea name=content required>$row[0]</textarea></p>";
+	$form .= "<p><input class='btn btn-info' type=submit value=修改></p></form>";
+	$forumId = $row[1];
+}
+
+echo $form;
+
+if ($_SERVER["REQUEST_METHOD"]=="POST") {
+  $id = $_POST["id"];
+  $content = $_POST["content"];
+  if(!$content){
+  	 echo "content need value. ";
+  	 exit();
+  }
+	echo $id;
+  $sql = "UPDATE message SET content='$content' WHERE id='$id' ";
+  $update = oci_parse($dbconn, $sql);
+  oci_execute($update);
+  $_SESSION['message'] = "修改成功";
+  header("Location: /forum/forumDetail.php?id=$forumId");
+  exit();
+}
+
+?>
+
+
+
+</body>
+</html>
